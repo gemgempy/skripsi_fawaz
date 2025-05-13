@@ -3,12 +3,35 @@ import pandas as pd
 import numpy as np
 import joblib
 import matplotlib.pyplot as plt
-from io import BytesIO
 
 # ========== Load Model ==========
 svm_tanpa = joblib.load("models/svm_tanpa_optimasi.pkl")
 svm_ga = joblib.load("models/svm_dengan_ga.pkl")
 svm_pso = joblib.load("models/svm_dengan_pso.pkl")
+
+# ========== Daftar Fitur yang Dipakai Saat Training ==========
+feature_columns = [
+    "Memiliki tanggung jawab dalam memastikan seluruh siswa memahami materi yang diajarkan.",
+    "Merespon setiap pertanyaan dari murid",
+    "Bersikap adil dan tidak membeda-bedakan siswa dalam proses pembelajaran.",
+    "Memberikan penilaian dan umpan balik terhadap hasil belajar peserta didik secara jelas dan objektif.",
+    "Bertindak sesuai dengan norma agama, hukum, sosial, dan budaya dalam mengajar.",
+    "Menyelenggarakan kegiatan belajar mengajar sesuai kurikulum Merdeka",
+    "Sikap dan kepribadian guru memberikan pengaruh positif terhadap motivasi belajar saya.",
+    "Menjelaskan materi/jawaban pertanyaan dengan jelas dan memperkuat pemahaman",
+    "Soal ujian/ulangan sangat relevan dengan capaian pembelajaran",
+    "Berupaya mengembangkan potensi yang dimiliki setiap peserta didik.",
+    "Mudah dihubungi saat jam kerja",
+    "Membangun diskusi dengan nyaman",
+    "Memberikan wawasan baru tentang masa sekolah SMP dan yang lebih tinggi",
+    "Memahami kesulitan murid dalam proses belajar",
+    "Memahami karakteristik setiap peserta didik dalam proses pembelajaran",
+    "Memfasilitasi untuk kegiatan berdiskusi/belajar kelompok di kelas",
+    "Metode pembelajaran yang digunakan oleh guru membantu saya memahami materi dengan baik.",
+    "Selalu hadir tepat waktu dan disiplin dalam menjalankan tugas mengajar di kelas.",
+    "Mata pelajaran yang diajarkan oleh guru tersebut",
+    "Berpenampilan rapih"
+]
 
 # ========== Helper ==========
 def preprocess_data(df):
@@ -25,7 +48,6 @@ def preprocess_data(df):
 
     target_col = "Menurut anda apakah guru ini mumpuni dalam mengajar"
 
-    # Parsikan nilai likert
     def parse_likert(x):
         for i in range(1, 6):
             if str(i) in str(x):
@@ -39,11 +61,11 @@ def preprocess_data(df):
     df.fillna(df.mean(numeric_only=True), inplace=True)
 
     if target_col in df.columns:
-        df = df.drop(columns=[target_col])
+        df.drop(columns=[target_col], inplace=True)
 
     nama_guru = df["Nama Lengkap"].values[0] if "Nama Lengkap" in df.columns else "Tidak diketahui"
-    df = df.drop(columns=["Nama Lengkap"], errors='ignore')
-    
+    df.drop(columns=["Nama Lengkap"], errors='ignore', inplace=True)
+
     return df, nama_guru
 
 # ========== UI ==========
@@ -55,37 +77,45 @@ uploaded_file = st.file_uploader("📎 Upload file Excel (.xlsx)", type=["xlsx"]
 
 if uploaded_file:
     if st.button("🚀 Proses Data"):
-        df_input = pd.read_excel(uploaded_file)
-        X, nama_guru = preprocess_data(df_input)
-        X = X.reindex(columns=svm_ga.feature_names_in_, fill_value=0)
-        X.fillna(0, inplace=True)
+        try:
+            df_input = pd.read_excel(uploaded_file)
+            X, nama_guru = preprocess_data(df_input)
 
-        # Model tanpa probabilitas
-        pred_tanpa_score = svm_tanpa.predict_proba(X)[0][1] * 100
+            # Sesuaikan kolom input agar cocok dengan fitur model
+            X = X.reindex(columns=feature_columns, fill_value=0)
 
-        # Model dengan probabilitas
-        pred_ga = svm_ga.predict_proba(X)[0][1] * 100
-        pred_pso = svm_pso.predict_proba(X)[0][1] * 100
+            # Model tanpa probabilitas → fallback ke .predict()
+            try:
+                pred_tanpa_score = svm_tanpa.predict_proba(X)[0][1] * 100
+            except AttributeError:
+                pred_class = svm_tanpa.predict(X)[0]
+                pred_tanpa_score = 100.0 if pred_class == 1 else 0.0
 
-        hasil = {
-            "Model": ["SVM Tanpa Optimasi", "SVM + GA", "SVM + PSO"],
-            "Persentase Mumpuni (%)": [pred_tanpa_score, pred_ga, pred_pso],
-            "Klasifikasi": [
-                "Mumpuni" if pred_tanpa_score >= 50 else "Tidak Mumpuni",
-                "Mumpuni" if pred_ga >= 50 else "Tidak Mumpuni",
-                "Mumpuni" if pred_pso >= 50 else "Tidak Mumpuni"
-            ]
-        }
+            # Model dengan probabilitas
+            pred_ga = svm_ga.predict_proba(X)[0][1] * 100
+            pred_pso = svm_pso.predict_proba(X)[0][1] * 100
 
-        st.subheader("📌 Hasil Prediksi")
-        st.write(f"**Nama Guru**: {nama_guru}")
-        st.dataframe(pd.DataFrame(hasil))
+            hasil = {
+                "Model": ["SVM Tanpa Optimasi", "SVM + GA", "SVM + PSO"],
+                "Persentase Mumpuni (%)": [pred_tanpa_score, pred_ga, pred_pso],
+                "Klasifikasi": [
+                    "Mumpuni" if pred_tanpa_score >= 50 else "Tidak Mumpuni",
+                    "Mumpuni" if pred_ga >= 50 else "Tidak Mumpuni",
+                    "Mumpuni" if pred_pso >= 50 else "Tidak Mumpuni"
+                ]
+            }
 
-        # Plot chart
-        fig, ax = plt.subplots()
-        ax.bar(hasil["Model"], hasil["Persentase Mumpuni (%)"])
-        ax.set_ylim(0, 100)
-        ax.set_ylabel("Persentase Mumpuni (%)")
-        ax.set_title("Perbandingan Prediksi Antar Model")
-        st.pyplot(fig)
+            st.subheader("📌 Hasil Prediksi")
+            st.write(f"**Nama Guru**: {nama_guru}")
+            st.dataframe(pd.DataFrame(hasil))
 
+            # Plot chart
+            fig, ax = plt.subplots()
+            ax.bar(hasil["Model"], hasil["Persentase Mumpuni (%)"])
+            ax.set_ylim(0, 100)
+            ax.set_ylabel("Persentase Mumpuni (%)")
+            ax.set_title("Perbandingan Prediksi Antar Model")
+            st.pyplot(fig)
+
+        except Exception as e:
+            st.error(f"❌ Terjadi kesalahan saat memproses file: {e}")
