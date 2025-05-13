@@ -1,3 +1,4 @@
+import json
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -8,6 +9,38 @@ import matplotlib.pyplot as plt
 svm_tanpa = joblib.load("models/svm_tanpa_optimasi.pkl")
 svm_ga = joblib.load("models/svm_dengan_ga.pkl")
 svm_pso = joblib.load("models/svm_dengan_pso.pkl")
+
+# ========== Evaluasi Model ==========
+evaluasi_model = {
+    "SVM Tanpa Optimasi": {
+        "Train Accuracy": 90.75,
+        "Test Accuracy": 80.5,
+        "Precision": 0.8079,
+        "Recall": 0.8050,
+        "F1-Score": 0.8053,
+        "Execution Time (s)": 0.41,
+        "Best Params": "-"
+    },
+    "SVM + GA": {
+        "Train Accuracy": 98.625,
+        "Test Accuracy": 84.0,
+        "Precision": 0.8428,
+        "Recall": 0.8400,
+        "F1-Score": 0.8400,
+        "Execution Time (s)": 84.87,
+        "Best Params": "C=5.2894, gamma=0.4545"
+    },
+    "SVM + PSO": {
+        "Train Accuracy": 94.5,
+        "Test Accuracy": 84.5,
+        "Precision": 0.8445,
+        "Recall": 0.8450,
+        "F1-Score": 0.8434,
+        "Execution Time (s)": 296.15,
+        "Best Params": "C=51.7000, gamma=0.0375"
+    }
+}
+
 
 # ========== Daftar Fitur yang Dipakai Saat Training ==========
 feature_columns = [
@@ -72,6 +105,23 @@ def preprocess_data(df):
 st.set_page_config(page_title="Klasifikasi Guru Mumpuni", layout="wide")
 st.title("📊 Aplikasi Klasifikasi Guru Mumpuni")
 st.write("Upload file data guru untuk diproses oleh 3 model: SVM, SVM + GA, SVM + PSO")
+st.subheader("📊 Evaluasi Model (Train & Test)")
+
+df_eval = pd.DataFrame(evaluasi_model).T  # Transpose agar model di index
+df_eval_display = df_eval.copy()
+df_eval_display[["Train Accuracy", "Test Accuracy"]] = df_eval_display[["Train Accuracy", "Test Accuracy"]].round(2)
+df_eval_display[["Precision", "Recall", "F1-Score"]] = df_eval_display[["Precision", "Recall", "F1-Score"]].round(4)
+
+st.dataframe(df_eval_display)
+
+# Visualisasi Train vs Test Accuracy
+st.write("### 🔍 Perbandingan Akurasi (Train vs Test)")
+df_acc = df_eval[["Train Accuracy", "Test Accuracy"]]
+df_acc.plot(kind='bar')
+plt.ylabel("Akurasi (%)")
+plt.ylim(0, 100)
+st.pyplot()
+
 
 uploaded_file = st.file_uploader("📎 Upload file Excel (.xlsx)", type=["xlsx"])
 
