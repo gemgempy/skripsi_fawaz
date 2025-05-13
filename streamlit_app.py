@@ -58,14 +58,22 @@ if uploaded_file:
         df_input = pd.read_excel(uploaded_file)
         X, nama_guru = preprocess_data(df_input)
 
-        pred_tanpa = svm_tanpa.predict_proba(X)[0][1]
-        pred_ga = svm_ga.predict_proba(X)[0][1]
-        pred_pso = svm_pso.predict_proba(X)[0][1]
+        # Model tanpa probabilitas
+        pred_tanpa_class = svm_tanpa.predict(X)[0]
+        pred_tanpa_score = 100.0 if pred_tanpa_class == 1 else 0.0
+
+        # Model dengan probabilitas
+        pred_ga = svm_ga.predict_proba(X)[0][1] * 100
+        pred_pso = svm_pso.predict_proba(X)[0][1] * 100
 
         hasil = {
             "Model": ["SVM Tanpa Optimasi", "SVM + GA", "SVM + PSO"],
-            "Persentase Mumpuni (%)": [pred_tanpa*100, pred_ga*100, pred_pso*100],
-            "Klasifikasi": ["Mumpuni" if p >= 0.5 else "Tidak Mumpuni" for p in [pred_tanpa, pred_ga, pred_pso]]
+            "Persentase Mumpuni (%)": [pred_tanpa_score, pred_ga, pred_pso],
+            "Klasifikasi": [
+                "Mumpuni" if pred_tanpa_score >= 50 else "Tidak Mumpuni",
+                "Mumpuni" if pred_ga >= 50 else "Tidak Mumpuni",
+                "Mumpuni" if pred_pso >= 50 else "Tidak Mumpuni"
+            ]
         }
 
         st.subheader("📌 Hasil Prediksi")
@@ -79,3 +87,4 @@ if uploaded_file:
         ax.set_ylabel("Persentase Mumpuni (%)")
         ax.set_title("Perbandingan Prediksi Antar Model")
         st.pyplot(fig)
+
