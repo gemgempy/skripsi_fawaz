@@ -59,8 +59,7 @@ if uploaded_file:
         X, nama_guru = preprocess_data(df_input)
 
         # Model tanpa probabilitas
-        pred_tanpa_class = svm_tanpa.predict(X)[0]
-        pred_tanpa_score = 100.0 if pred_tanpa_class == 1 else 0.0
+        pred_tanpa_score = svm_tanpa.predict_proba(X)[0][1] * 100
 
         # Model dengan probabilitas
         pred_ga = svm_ga.predict_proba(X)[0][1] * 100
