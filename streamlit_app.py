@@ -117,10 +117,11 @@ st.dataframe(df_eval_display)
 # Visualisasi Train vs Test Accuracy
 st.write("### 🔍 Perbandingan Akurasi (Train vs Test)")
 df_acc = df_eval[["Train Accuracy", "Test Accuracy"]]
-df_acc.plot(kind='bar')
-plt.ylabel("Akurasi (%)")
-plt.ylim(0, 100)
-st.pyplot()
+fig, ax = plt.subplots(figsize=(6, 4))
+df_acc.plot(kind='bar', ax=ax)
+ax.set_ylabel("Akurasi (%)")
+ax.set_ylim(0, 100)
+st.pyplot(fig)  
 
 
 uploaded_file = st.file_uploader("📎 Upload file Excel (.xlsx)", type=["xlsx"])
