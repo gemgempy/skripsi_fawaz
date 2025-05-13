@@ -57,6 +57,7 @@ if uploaded_file:
     if st.button("🚀 Proses Data"):
         df_input = pd.read_excel(uploaded_file)
         X, nama_guru = preprocess_data(df_input)
+        X = X.reindex(columns=svm_ga.feature_names_in_, fill_value=0)
         X.fillna(0, inplace=True)
 
         # Model tanpa probabilitas
