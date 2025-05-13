@@ -57,6 +57,7 @@ if uploaded_file:
     if st.button("🚀 Proses Data"):
         df_input = pd.read_excel(uploaded_file)
         X, nama_guru = preprocess_data(df_input)
+        X.fillna(0, inplace=True)
 
         # Model tanpa probabilitas
         pred_tanpa_score = svm_tanpa.predict_proba(X)[0][1] * 100
