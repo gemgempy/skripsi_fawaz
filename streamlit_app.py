@@ -77,6 +77,9 @@ def preprocess_data(df):
         "Dengan ini, saya menyatakan bersedia berpartisipasi menjadi responden dalam penelitian ini. Jawaban yang saya berikan adalah jawaban yang sebenar-benarnya terjadi tanpa ada pengaruh dari hal/pihak manapun. Saya memahami bahwa seluruh informasi yang b"
     ]
 
+    # ✅ Ambil nama sebelum drop
+    nama_guru = df["Nama Lengkap"].values[0] if "Nama Lengkap" in df.columns else "Tidak diketahui"
+
     df.drop(columns=drop_columns, inplace=True, errors='ignore')
 
     target_col = "Menurut anda apakah guru ini mumpuni dalam mengajar"
@@ -96,16 +99,17 @@ def preprocess_data(df):
     if target_col in df.columns:
         df.drop(columns=[target_col], inplace=True)
 
-    nama_guru = df["Nama Lengkap"].values[0] if "Nama Lengkap" in df.columns else "Tidak diketahui"
     df.drop(columns=["Nama Lengkap"], errors='ignore', inplace=True)
 
     return df, nama_guru
+
 
 # ========== UI ==========
 st.set_page_config(page_title="Klasifikasi Guru Mumpuni", layout="wide")
 st.title("📊 Aplikasi Klasifikasi Guru Mumpuni")
 st.write("Upload file data guru untuk diproses oleh 3 model: SVM, SVM + GA, SVM + PSO")
 uploaded_file = st.file_uploader("📎 Upload file Excel (.xlsx)", type=["xlsx"])
+process_clicked = st.button("🚀 Proses Data")
 
 st.subheader("📊 Evaluasi Model (Train & Test)")
 
@@ -126,47 +130,45 @@ with st.expander("🔍 Perbandingan Akurasi (Train vs Test)", expanded=True):
     st.pyplot(fig)
 
 
-if uploaded_file:
-    if st.button("🚀 Proses Data"):
-        try:
-            df_input = pd.read_excel(uploaded_file)
-            X, nama_guru = preprocess_data(df_input)
-
-            # Sesuaikan kolom input agar cocok dengan fitur model
-            X = X.reindex(columns=feature_columns, fill_value=0)
+if uploaded_file and process_clicked:
+    try:
+        df_input = pd.read_excel(uploaded_file)
+        X, nama_guru = preprocess_data(df_input)
+        # Sesuaikan kolom input agar cocok dengan fitur model
+        X = X.reindex(columns=feature_columns, fill_value=0)
 
             # Model tanpa probabilitas → fallback ke .predict()
-            try:
-                pred_tanpa_score = svm_tanpa.predict_proba(X)[0][1] * 100
-            except AttributeError:
-                pred_class = svm_tanpa.predict(X)[0]
-                pred_tanpa_score = 100.0 if pred_class == 1 else 0.0
+        try:
+            pred_tanpa_score = svm_tanpa.predict_proba(X)[0][1] * 100
+        except AttributeError:
+            pred_class = svm_tanpa.predict(X)[0]
+            pred_tanpa_score = 100.0 if pred_class == 1 else 0.0
 
-            # Model dengan probabilitas
-            pred_ga = svm_ga.predict_proba(X)[0][1] * 100
-            pred_pso = svm_pso.predict_proba(X)[0][1] * 100
+        # Model dengan probabilitas
+        pred_ga = svm_ga.predict_proba(X)[0][1] * 100
+        pred_pso = svm_pso.predict_proba(X)[0][1] * 100
 
-            hasil = {
-                "Model": ["SVM Tanpa Optimasi", "SVM + GA", "SVM + PSO"],
-                "Persentase Mumpuni (%)": [pred_tanpa_score, pred_ga, pred_pso],
-                "Klasifikasi": [
-                    "Mumpuni" if pred_tanpa_score >= 50 else "Tidak Mumpuni",
-                    "Mumpuni" if pred_ga >= 50 else "Tidak Mumpuni",
-                    "Mumpuni" if pred_pso >= 50 else "Tidak Mumpuni"
-                ]
-            }
+        hasil = {
+            "Model": ["SVM Tanpa Optimasi", "SVM + GA", "SVM + PSO"],
+            "Persentase Mumpuni (%)": [pred_tanpa_score, pred_ga, pred_pso],
+            "Klasifikasi": [
+                "Mumpuni" if pred_tanpa_score >= 50 else "Tidak Mumpuni",
+                "Mumpuni" if pred_ga >= 50 else "Tidak Mumpuni",
+                "Mumpuni" if pred_pso >= 50 else "Tidak Mumpuni"
+            ]
+        }
 
-            st.subheader("📌 Hasil Prediksi")
-            st.write(f"**Nama Guru**: {nama_guru}")
-            st.dataframe(pd.DataFrame(hasil))
+        st.subheader("📌 Hasil Prediksi")
+        st.write(f"**Nama Guru**: {nama_guru}")
+        st.dataframe(pd.DataFrame(hasil))
 
-            # Plot chart
-            fig, ax = plt.subplots()
-            ax.bar(hasil["Model"], hasil["Persentase Mumpuni (%)"])
-            ax.set_ylim(0, 100)
-            ax.set_ylabel("Persentase Mumpuni (%)")
-            ax.set_title("Perbandingan Prediksi Antar Model")
-            st.pyplot(fig)
+        # Plot chart
+        fig, ax = plt.subplots()
+        ax.bar(hasil["Model"], hasil["Persentase Mumpuni (%)"])
+        ax.set_ylim(0, 100)
+        ax.set_ylabel("Persentase Mumpuni (%)")
+        ax.set_title("Perbandingan Prediksi Antar Model")
+        st.pyplot(fig)
 
-        except Exception as e:
-            st.error(f"❌ Terjadi kesalahan saat memproses file: {e}")
+    except Exception as e:
+        st.error(f"❌ Terjadi kesalahan saat memproses file: {e}")
