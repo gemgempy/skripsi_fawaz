@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 import joblib
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
 
 # ========== Load Model ==========
 svm_tanpa = joblib.load("models/svm_tanpa_optimasi.pkl")
@@ -21,7 +23,7 @@ evaluasi_model = {
         "Execution Time (s)": 0.11,
         "Best Params": "-"
     },
-    "SVM + GA": {
+    "GA SVM": {
         "Train Accuracy": 98.5,
         "Test Accuracy": 84.0,
         "Precision": 0.843,
@@ -30,7 +32,7 @@ evaluasi_model = {
         "Execution Time (s)": 30.19,
         "Best Params": "C=5.2894, gamma=0.4545"
     },
-    "SVM + PSO": {
+    "PSO SVM": {
         "Train Accuracy": 94.8,
         "Test Accuracy": 84.5,
         "Precision": 0.844,
@@ -149,7 +151,7 @@ if uploaded_file and process_clicked:
         pred_pso = svm_pso.predict_proba(X)[0][1] * 100
 
         hasil = {
-            "Model": ["SVM Tanpa Optimasi", "SVM + GA", "SVM + PSO"],
+            "Model": ["SVM Tanpa Optimasi", "GA SVM", "PSO SVM"],
             "Persentase Mumpuni (%)": [pred_tanpa_score, pred_ga, pred_pso],
             "Klasifikasi": [
                 "Mumpuni" if pred_tanpa_score >= 50 else "Tidak Mumpuni",
@@ -162,12 +164,39 @@ if uploaded_file and process_clicked:
         st.write(f"**Nama Guru**: {nama_guru}")
         st.dataframe(pd.DataFrame(hasil))
 
-        # Plot chart
-        fig, ax = plt.subplots()
-        ax.bar(hasil["Model"], hasil["Persentase Mumpuni (%)"])
+        # Custom visualisasi dengan "tabung" berwarna gradasi dan label kualitas
+        fig, ax = plt.subplots(figsize=(8, 6))
+        
+        # Label skala mumpuni
+        label_kualitas = ["Sangat Tidak Mumpuni", "Tidak Mumpuni", "Kurang Mumpuni", "Mumpuni", "Sangat Mumpuni"]
+        warna_gradasi = ["#ff0000", "#ff6600", "#ffcc00", "#66cc66", "#009933"]  # Merah ke hijau
+        tinggi_per_segment = 20  # total 5 label, 100/5 = 20
+        
+        for idx, (model, score) in enumerate(zip(hasil["Model"], hasil["Persentase Mumpuni (%)"])):
+            ax.add_patch(patches.Rectangle((idx * 1.5, 0), 1, 100, fill=False, edgecolor='black', linewidth=2))
+        
+            for i in range(5):
+                bottom = i * tinggi_per_segment
+                top = bottom + tinggi_per_segment
+                color = warna_gradasi[i]
+                ax.add_patch(patches.Rectangle((idx * 1.5, bottom), 1, tinggi_per_segment, color=color, alpha=0.6))
+        
+            # Overlay prediksi
+            ax.add_patch(patches.Rectangle((idx * 1.5, 0), 1, score, color='black', alpha=0.2))
+            ax.text(idx * 1.5 + 0.5, score + 2, f"{score:.1f}%", ha='center', va='bottom', fontsize=10, fontweight='bold')
+        
+        for i, label in enumerate(label_kualitas):
+            y = i * tinggi_per_segment + 10
+            ax.text(-0.6, y, label, va='center', ha='right', fontsize=9)
+        
+        ax.set_xlim(-1, len(hasil["Model"]) * 1.5)
         ax.set_ylim(0, 100)
-        ax.set_ylabel("Persentase Mumpuni (%)")
-        ax.set_title("Perbandingan Prediksi Antar Model")
+        ax.set_xticks([i * 1.5 + 0.5 for i in range(len(hasil["Model"]))])
+        ax.set_xticklabels(hasil["Model"])
+        ax.set_ylabel("Persentase Kemumpunian (%)")
+        ax.set_title("🔍 Visualisasi Prediksi Kemumpunian Guru oleh Tiga Model", fontsize=12, weight='bold')
+        ax.grid(axis='y', linestyle='--', alpha=0.5)
+        
         st.pyplot(fig)
 
     except Exception as e:
