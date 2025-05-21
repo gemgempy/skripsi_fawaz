@@ -79,7 +79,6 @@ def preprocess_data(df):
         "Dengan ini, saya menyatakan bersedia berpartisipasi menjadi responden dalam penelitian ini. Jawaban yang saya berikan adalah jawaban yang sebenar-benarnya terjadi tanpa ada pengaruh dari hal/pihak manapun. Saya memahami bahwa seluruh informasi yang b"
     ]
 
-    # ✅ Ambil nama sebelum drop
     nama_guru = df["Nama Lengkap"].values[0] if "Nama Lengkap" in df.columns else "Tidak diketahui"
 
     df.drop(columns=drop_columns, inplace=True, errors='ignore')
@@ -112,8 +111,8 @@ st.markdown(
     """
     <div style="display: flex; align-items: center; gap: 1rem;">
         <img src="http://smpn1tangerang.sch.id/wp-content/uploads/2020/03/logosmpn1tangerang.png" 
-             alt="Logo SMPN 1 Tangerang" width="60" height="60">
-        <h1 style="margin: 0;">📊 Aplikasi Klasifikasi Kualitas Guru SMP Negeri 1 Tangerang</h1>
+             alt="Logo SMPN 1 Tangerang" width="80" height="80">
+        <h1 style="margin: 0;"> Aplikasi Klasifikasi Kualitas Guru SMP Negeri 1 Tangerang</h1>
     </div>
     """,
     unsafe_allow_html=True
@@ -125,7 +124,7 @@ process_clicked = st.button("🚀 Proses Data")
 
 st.subheader("📊 Evaluasi Model (Train & Test)")
 
-df_eval = pd.DataFrame(evaluasi_model).T  # Transpose agar model di index
+df_eval = pd.DataFrame(evaluasi_model).T  
 df_eval_display = df_eval.copy()
 df_eval_display[["Train Accuracy", "Test Accuracy"]] = df_eval_display[["Train Accuracy", "Test Accuracy"]].round(2)
 df_eval_display[["Precision", "Recall", "F1-Score"]] = df_eval_display[["Precision", "Recall", "F1-Score"]].round(4)
