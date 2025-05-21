@@ -165,39 +165,46 @@ if uploaded_file and process_clicked:
         st.dataframe(pd.DataFrame(hasil))
 
         # Custom visualisasi dengan "tabung" berwarna gradasi dan label kualitas
-        fig, ax = plt.subplots(figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=(9, 7))
         
-        # Label skala mumpuni
         label_kualitas = ["Sangat Tidak Mumpuni", "Tidak Mumpuni", "Kurang Mumpuni", "Mumpuni", "Sangat Mumpuni"]
-        warna_gradasi = ["#ff0000", "#ff6600", "#ffcc00", "#66cc66", "#009933"]  # Merah ke hijau
-        tinggi_per_segment = 20  # total 5 label, 100/5 = 20
+        warna_gradasi = ["#cc0000", "#ff6600", "#ffcc00", "#66cc66", "#009933"]
+        tinggi_segment = 20
         
         for idx, (model, score) in enumerate(zip(hasil["Model"], hasil["Persentase Mumpuni (%)"])):
-            ax.add_patch(patches.Rectangle((idx * 1.5, 0), 1, 100, fill=False, edgecolor='black', linewidth=2))
+            ax.add_patch(patches.Rectangle((idx * 1.8, 0), 1.2, 100, fill=False, edgecolor='black', linewidth=2))
         
             for i in range(5):
-                bottom = i * tinggi_per_segment
-                top = bottom + tinggi_per_segment
+                bottom = i * tinggi_segment
                 color = warna_gradasi[i]
-                ax.add_patch(patches.Rectangle((idx * 1.5, bottom), 1, tinggi_per_segment, color=color, alpha=0.6))
+                ax.add_patch(patches.Rectangle((idx * 1.8, bottom), 1.2, tinggi_segment, color=color, alpha=0.8))
         
-            # Overlay prediksi
-            ax.add_patch(patches.Rectangle((idx * 1.5, 0), 1, score, color='black', alpha=0.2))
-            ax.text(idx * 1.5 + 0.5, score + 2, f"{score:.1f}%", ha='center', va='bottom', fontsize=10, fontweight='bold')
+            pred_height = score
+            ax.add_patch(patches.Rectangle((idx * 1.8, 0), 1.2, pred_height, color="#ff9966", alpha=1, zorder=5))  
+            ax.plot([idx * 1.8, (idx * 1.8) + 1.2], [pred_height, pred_height], color='black', linewidth=3, zorder=6)
         
-        for i, label in enumerate(label_kualitas):
-            y = i * tinggi_per_segment + 10
-            ax.text(-0.6, y, label, va='center', ha='right', fontsize=9)
+            ax.text(idx * 1.8 + 0.6, pred_height - 5, f"{score:.1f}%", ha='center', va='center', fontsize=11, fontweight='bold', color='black', zorder=7)
         
-        ax.set_xlim(-1, len(hasil["Model"]) * 1.5)
-        ax.set_ylim(0, 100)
-        ax.set_xticks([i * 1.5 + 0.5 for i in range(len(hasil["Model"]))])
-        ax.set_xticklabels(hasil["Model"])
+        ax.set_yticks([10, 30, 50, 70, 90])
+        ax.set_yticklabels(label_kualitas)
         ax.set_ylabel("Persentase Kemumpunian (%)")
-        ax.set_title("🔍 Visualisasi Prediksi Kemumpunian Guru oleh Tiga Model", fontsize=12, weight='bold')
-        ax.grid(axis='y', linestyle='--', alpha=0.5)
+        
+        ax.set_xlim(-0.5, len(hasil["Model"]) * 1.8 - 0.6)
+        ax.set_xticks([i * 1.8 + 0.6 for i in range(len(hasil["Model"]))])
+        ax.set_xticklabels(hasil["Model"], fontsize=10)
+        
+        from matplotlib.lines import Line2D
+        legend_elements = [patches.Patch(facecolor=color, edgecolor='black', label=label) 
+                           for label, color in zip(label_kualitas, warna_gradasi)]
+        ax.legend(handles=legend_elements, loc='upper center', bbox_to_anchor=(0.5, -0.08), 
+                  fancybox=True, shadow=False, ncol=3, title="Tingkat Kemumpunian")
+        
+        ax.set_title("🔍 Visualisasi Prediksi Kemumpunian Guru oleh Tiga Model", fontsize=13, weight='bold')
+        ax.set_ylim(0, 100)
+        ax.grid(axis='y', linestyle='--', alpha=0.3)
         
         st.pyplot(fig)
+        
 
     except Exception as e:
         st.error(f"❌ Terjadi kesalahan saat memproses file: {e}")
