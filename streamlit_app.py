@@ -108,7 +108,17 @@ def preprocess_data(df):
 
 # ========== UI ==========
 st.set_page_config(page_title="Klasifikasi Guru Mumpuni", layout="wide")
-st.title("📊 Aplikasi Klasifikasi Guru Mumpuni")
+st.markdown(
+    """
+    <div style="display: flex; align-items: center; gap: 1rem;">
+        <img src="http://smpn1tangerang.sch.id/wp-content/uploads/2020/03/logosmpn1tangerang.png" 
+             alt="Logo SMPN 1 Tangerang" width="60" height="60">
+        <h1 style="margin: 0;">📊 Aplikasi Klasifikasi Kualitas Guru SMP Negeri 1 Tangerang</h1>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 st.write("Upload file data guru untuk diproses oleh 3 model: SVM, SVM + GA, SVM + PSO")
 uploaded_file = st.file_uploader("📎 Upload file Excel (.xlsx)", type=["xlsx"])
 process_clicked = st.button("🚀 Proses Data")
