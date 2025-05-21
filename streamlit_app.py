@@ -208,7 +208,7 @@ if uploaded_file and process_clicked:
         ax.legend(handles=legend_elements, loc='upper center', bbox_to_anchor=(0.5, -0.08), 
                   fancybox=True, shadow=False, ncol=3, title="Tingkat Kemumpunian")
         
-        ax.set_title("🔍 Visualisasi Prediksi Kemumpunian Guru oleh Tiga Model", fontsize=13, weight='bold')
+        ax.set_title("Visualisasi Prediksi Kemumpunian Guru oleh Tiga Model", fontsize=13, weight='bold')
         ax.set_ylim(0, 100)
         ax.grid(axis='y', linestyle='--', alpha=0.3)
         
